@@ -1,8 +1,6 @@
 name: Deploy GitHub ARC Infra
 
 on:
-  # push:
-  #   branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -13,36 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: 'Login to Azure with OIDC'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
 
-    - name: Write Terraform Variable File with Secrets
-      run: |
-        cat > github_app.auto.tfvars <<EOF
-        github_app_id            = "${{ secrets.GH_APP_ID }}"
-        github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
-        github_app_private_key     = <<EOKEY
+      - name: Write Terraform Variable File with Secrets
+        run: |
+          cat > github_app.auto.tfvars <<EOF
+          github_app_id            = "${{ secrets.GH_APP_ID }}"
+          github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
+          github_app_private_key     = <<EOKEY
 ${{ secrets.GH_APP_PRIVATE_KEY }}
 EOKEY
-        EOF
+          EOF
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
 
-    - name: Get AKS Credentials
-      run: az aks get-credentials --resource-group ${{ secrets.AZURE_RG }} --name ${{ secrets.AZURE_AKS }} --admin --overwrite-existing
+      - name: Get AKS Credentials
+        run: az aks get-credentials --resource-group ${{ secrets.AZURE_RG }} --name ${{ secrets.AZURE_AKS }} --admin --overwrite-existing
 
-    - name: Apply Runner ScaleSet Manifest
-      run: kubectl apply -f manifests/arc-autoscale-runner.yaml
+      - name: Apply Runner ScaleSet Manifest
+        run: kubectl apply -f manifests/arc-autoscale-runner.yaml
