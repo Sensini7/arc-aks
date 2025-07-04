@@ -41,7 +41,9 @@ jobs:
           cat > github_app.auto.tfvars <<EOF
           github_app_id            = "${{ secrets.GH_APP_ID }}"
           github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
-          github_app_private_key     = ${{ secrets.GH_APP_PRIVATE_KEY }}
+          github_app_private_key     = <<EOKEY
+          ${{ secrets.GH_APP_PRIVATE_KEY }}
+          EOKEY
 
           EOF
 
