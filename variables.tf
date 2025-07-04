@@ -28,7 +28,7 @@ variable "node_count" {
 variable "vm_size" {
   description = "AKS VM size"
   type        = string
-  default     = "Standard_DS2_v3"
+  default     = "Standard_B2s"
 }
 
 variable "github_app_id" {
