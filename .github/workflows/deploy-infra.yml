@@ -87,8 +87,19 @@ jobs:
           echo "ARC CRD not available after waiting, failing."
           exit 1
 
-      - name: Sleep after CRD for API sync
-        run: sleep 30
+      # - name: Sleep after CRD for API sync
+      #   run: sleep 30
 
-      - name: Apply Runner ScaleSet Manifest
-        run: kubectl apply -f manifests/arc-autoscale-runner.yml
+      # - name: Apply Runner ScaleSet Manifest
+      #   run: kubectl apply -f manifests/arc-autoscale-runner.yml
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Deploy ARC Runner ScaleSet with Helm
+        run: |
+          helm upgrade --install arc-runner-set \
+            --namespace arc \
+            --create-namespace \
+            -f manifests/runner-values.yml \
+            oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set

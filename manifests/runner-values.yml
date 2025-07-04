@@ -1,0 +1,21 @@
+# manifests/runner-values.yml
+
+githubConfigUrl: https://github.com/Sensini7/arc-aks
+
+# The name of the secret created (in your namespace) with app ID, installation ID, and PEM key
+githubConfigSecret: github-config
+
+# Minimum and maximum number of runners
+minRunners: 0
+maxRunners: 10
+
+# Optional: Custom runner group, otherwise defaults to "Default"
+runnerGroup: Default
+
+# Runner container settings (customize image if needed)
+template:
+  spec:
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command: ["/home/runner/run.sh"]
