@@ -87,5 +87,8 @@ jobs:
           echo "ARC CRD not available after waiting, failing."
           exit 1
 
+      - name: Sleep after CRD for API sync
+        run: sleep 30
+
       - name: Apply Runner ScaleSet Manifest
         run: kubectl apply -f manifests/arc-autoscale-runner.yml
