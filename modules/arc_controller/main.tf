@@ -3,7 +3,7 @@ resource "helm_release" "arc_systems" {
   namespace  = var.namespace
   chart      = "gha-runner-scale-set-controller"
   repository = "oci://ghcr.io/actions/actions-runner-controller-charts"
-  version    = "0.11.0"
+  version    = "0.12.1"
 
   values = [yamlencode({
     metrics = {
