@@ -19,5 +19,4 @@ resource "helm_release" "arc_systems" {
     }
   })]
 
-  depends_on = var.namespace_depends_on
 }

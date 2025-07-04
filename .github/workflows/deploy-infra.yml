@@ -43,8 +43,14 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
 
       - name: Get AKS Credentials
         run: az aks get-credentials --resource-group ${{ secrets.AZURE_RG }} --name ${{ secrets.AZURE_AKS }} --admin --overwrite-existing
