@@ -10,8 +10,7 @@ spec:
   maxRunners: 10
   template:
     spec:
-      image: ghcr.io/actions/actions-runner:latest
-      # containers:
-      #   - name: runner
-      #     image: ghcr.io/actions/actions-runner:latest
-      #     command: ["/home/runner/run.sh"]
+      containers:
+        - name: runner
+          image: ghcr.io/actions/actions-runner:latest
+          command: ["/home/runner/run.sh"]
