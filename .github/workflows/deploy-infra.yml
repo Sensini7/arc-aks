@@ -67,8 +67,14 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
+      - name: Export Terraform Outputs
+        id: tf_outputs
+        run: |
+          echo "RG_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
+          echo "AKS_NAME=$(terraform output -raw aks_cluster_name)" >> $GITHUB_ENV
+
       - name: Get AKS Credentials
-        run: az aks get-credentials --resource-group ${{ secrets.AZURE_RG }} --name ${{ secrets.AZURE_AKS }} --admin --overwrite-existing
+        run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --admin --overwrite-existing
 
       - name: Apply Runner ScaleSet Manifest
         run: kubectl apply -f manifests/arc-autoscale-runner.yaml
