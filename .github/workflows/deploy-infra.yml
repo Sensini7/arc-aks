@@ -1,8 +1,8 @@
 name: Deploy GitHub ARC Infra
 
 on:
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -24,6 +24,16 @@ jobs:
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Write Terraform Variable File with Secrets
+      run: |
+        cat > github_app.auto.tfvars <<EOF
+        github_app_id            = "${{ secrets.GH_APP_ID }}"
+        github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
+        github_app_private_key     = <<EOKEY
+${{ secrets.GH_APP_PRIVATE_KEY }}
+EOKEY
+        EOF
 
     - name: Terraform Init
       run: terraform init
