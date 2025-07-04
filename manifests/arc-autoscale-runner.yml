@@ -1,5 +1,5 @@
 apiVersion: actions.github.com/v1alpha1
-kind: AutoScalingRunnerSet
+kind: AutoscalingRunnerSet
 metadata:
   name: arc-usisng-system-runners
   namespace: arc
@@ -10,7 +10,8 @@ spec:
   maxRunners: 10
   template:
     spec:
-      containers:
-        - name: runner
-          image: ghcr.io/actions/actions-runner:latest
-          command: ["/home/runner/run.sh"]
+      image: ghcr.io/actions/actions-runner:latest
+      # containers:
+      #   - name: runner
+      #     image: ghcr.io/actions/actions-runner:latest
+      #     command: ["/home/runner/run.sh"]
