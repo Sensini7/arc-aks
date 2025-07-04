@@ -1,0 +1,13 @@
+name: Test ARC Runner on AKS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    #runs-on: [self-hosted]   # or add more labels if needed
+    runs-on: arc-arc-usisng-system-runners
+
+    steps:
+      - name: Print Hello from ARC on AKS
+        run: echo "Hello, this is ARC on AKS!"
