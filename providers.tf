@@ -18,7 +18,7 @@ terraform {
 
 provider "azurerm" {
   features {}
-  use_oidc        = true
+  use_oidc = true
 }
 
 # Kubernetes & Helm providers configured after AKS deployment (see main.tf)

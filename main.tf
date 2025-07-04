@@ -35,8 +35,8 @@ module "arc_namespace" {
 }
 
 module "arc_controller" {
-  source              = "./modules/arc_controller"
-  namespace           = module.arc_namespace.namespace_name
+  source               = "./modules/arc_controller"
+  namespace            = module.arc_namespace.namespace_name
   namespace_depends_on = [module.arc_namespace]
 }
 

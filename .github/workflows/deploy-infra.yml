@@ -39,6 +39,9 @@ jobs:
           github_app_private_key     = ${{ secrets.GH_APP_PRIVATE_KEY }}
 
           EOF
+          
+      - name: Terraform Format
+        run: terraform fmt -recursive
 
       - name: Terraform Init
         env:
