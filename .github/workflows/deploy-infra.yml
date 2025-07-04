@@ -77,4 +77,4 @@ jobs:
         run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --admin --overwrite-existing
 
       - name: Apply Runner ScaleSet Manifest
-        run: kubectl apply -f manifests/arc-autoscale-runner.yaml
+        run: kubectl apply -f manifests/arc-autoscale-runner.yml
