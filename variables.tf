@@ -9,11 +9,6 @@ variable "rg_name" {
   type        = string
 }
 
-variable "sa_name" {
-  description = "Storage account name"
-  type        = string
-}
-
 variable "aks_name" {
   description = "AKS cluster name"
   type        = string

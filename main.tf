@@ -4,13 +4,6 @@ module "resource_group" {
   location = var.location
 }
 
-module "storage" {
-  source              = "./modules/storage"
-  name                = var.sa_name
-  resource_group_name = module.resource_group.name
-  location            = var.location
-}
-
 module "aks" {
   source              = "./modules/aks"
   name                = var.aks_name

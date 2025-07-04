@@ -1,6 +1,5 @@
 location        = "eastus"
 rg_name         = "arc-demo-rg"
-sa_name         = "arcdemostate"
 aks_name        = "arcaksdemo"
 dns_prefix      = "arcaksdemo"
 # github_app_id   = "123456"
