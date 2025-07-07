@@ -1,0 +1,65 @@
+name: Terraform Plan and Destroy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: 1.7.5
+
+jobs:
+  terraform-plan-destroy:
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Login to Azure with OIDC'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Write Terraform Variable File with Secrets
+        run: |
+          cat > github_app.auto.tfvars <<EOF
+          github_app_id            = "${{ secrets.GH_APP_ID }}"
+          github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
+          github_app_private_key     = <<EOKEY
+          ${{ secrets.GH_APP_PRIVATE_KEY }}
+          EOKEY
+
+          EOF
+
+      - name: Terraform Format
+        run: terraform fmt -recursive
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Show Plan Output (for review)
+        run: terraform show tfplan
+
+      - name: Destroy Infrastructure
+        # Use the same var file for destroy, no plan needed, auto-approve for CI
+        run: terraform destroy -auto-approve -var-file="github_app.auto.tfvars"
