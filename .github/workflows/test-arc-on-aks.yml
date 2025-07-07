@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     #runs-on: [self-hosted]   # or add more labels if needed
-    runs-on: arc-arc-usisng-system-runners
+    runs-on: arc-runner-set
 
     steps:
       - name: Print Hello from ARC on AKS
