@@ -8,6 +8,11 @@ on:
         required: true
         type: boolean
         default: true
+      environment:
+        description: 'Environment to deploy to (e.g., sumvita)'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   id-token: write
@@ -19,16 +24,17 @@ env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  #ARM_USE_OIDC: true
 
 jobs:
-  terraform-plan-apply:
+  terraform-plan:
     runs-on: ubuntu-latest
+    outputs:
+      tfplan_path: ${{ steps.plan.outputs.tfplan_path }}
     # env:
     #   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
     #   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
     #   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-    #   #ARM_USE_OIDC: true
+      #ARM_USE_OIDC: true
 
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +43,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-
+          
       # OIDC Azure Login
       - name: 'Login to Azure with OIDC'
         if: ${{ inputs.use_oidc == 'true' }}
@@ -61,7 +67,6 @@ jobs:
       - name: Set ARM_USE_OIDC env
         run: |
           echo "ARM_USE_OIDC=${{ inputs.use_oidc }}" >> $GITHUB_ENV
-
 
       - name: Write Terraform Variable File with Secrets
         run: |
@@ -89,7 +94,61 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        id: plan
+        run: |
+          terraform plan -out=tfplan
+          echo "tfplan_path=tfplan" >> $GITHUB_OUTPUT
+        # run: terraform plan -out=tfplan 
+
+      # Save the tfplan as an artifact for the next job
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+
+  terraform-apply:
+    name: Terraform Apply
+    if: ${{ github.event.inputs.environment == 'sumvita' }}   # <-- Only runs if env input is sumvita 
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    environment:
+      name: ${{ github.event.inputs.environment }} # Use the environment input from the workflow dispatch
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # OIDC Azure Login
+      - name: 'Login to Azure with OIDC'
+        if: ${{ inputs.use_oidc == 'true' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          #allow-no-subscriptions: true
+
+      # Client Secret Azure Login
+      - name: 'Login to Azure with Client Secret'
+        if: ${{ inputs.use_oidc == 'false' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
