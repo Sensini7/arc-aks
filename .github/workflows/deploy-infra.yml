@@ -108,10 +108,12 @@ jobs:
           path: tfplan
 
   terraform-apply:
-    name: Terraform Apply 
+    name: Terraform Apply
+    if: ${{ github.event.inputs.environment == 'sumvita' }}   # <-- Only runs if env input is sumvita 
     runs-on: ubuntu-latest
     needs: terraform-plan
-    environment: sumvita
+    environment:
+      name: ${{ github.event.inputs.environment }} # Use the environment input from the workflow dispatch
     steps:
       - uses: actions/checkout@v4
       - name: Download plan artifact
