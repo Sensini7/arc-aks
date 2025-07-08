@@ -40,7 +40,7 @@ jobs:
 
       # OIDC Azure Login
       - name: 'Login to Azure with OIDC'
-        if: ${{ inputs.use_oidc == 'true' }}
+        if: ${{ inputs.use_oidc }}
         uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -50,7 +50,7 @@ jobs:
 
       # Client Secret Azure Login
       - name: 'Login to Azure with Client Secret'
-        if: ${{ inputs.use_oidc == 'false' }}
+        if: ${{ !inputs.use_oidc }}
         uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
