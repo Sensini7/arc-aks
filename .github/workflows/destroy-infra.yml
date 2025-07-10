@@ -62,4 +62,4 @@ jobs:
 
       - name: Destroy Infrastructure
         # Use the same var file for destroy, no plan needed, auto-approve for CI
-        run: terraform destroy -auto-approve -var-file="github_app.auto.tfvars"
+        run: terraform destroy -auto-approve -var-file="github_app.auto.tfvars" -timeout=30m
