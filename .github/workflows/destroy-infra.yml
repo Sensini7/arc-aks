@@ -34,16 +34,16 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-    #   - name: Write Terraform Variable File with Secrets
-    #     run: |
-    #       cat > github_app.auto.tfvars <<EOF
-    #       github_app_id            = "${{ secrets.GH_APP_ID }}"
-    #       github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
-    #       github_app_private_key     = <<EOKEY
-    #       ${{ secrets.GH_APP_PRIVATE_KEY }}
-    #       EOKEY
+      - name: Write Terraform Variable File with Secrets
+        run: |
+          cat > github_app.auto.tfvars <<EOF
+          github_app_id            = "${{ secrets.GH_APP_ID }}"
+          github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
+          github_app_private_key     = <<EOKEY
+          ${{ secrets.GH_APP_PRIVATE_KEY }}
+          EOKEY
 
-    #       EOF
+          EOF
 
     #   - name: Terraform Format
     #     run: terraform fmt -recursive
@@ -55,7 +55,7 @@ jobs:
     #     run: terraform validate
 
       - name: Terraform Plan (Destroy)
-        run: terraform plan -destroy -out=tfplan #-var-file="github_app.auto.tfvars"
+        run: terraform plan -destroy -out=tfplan -var-file="github_app.auto.tfvars"
 
       - name: Show Plan Output (for review)
         run: terraform show tfplan
