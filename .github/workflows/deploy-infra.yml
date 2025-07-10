@@ -61,9 +61,20 @@ jobs:
               "tenantId": "${{ vars.AZURE_TENANT_ID }}"
             }
 
+      # Set ARM_USE_OIDC env for OIDC
       - name: Set ARM_USE_OIDC env
+        if: ${{ inputs.use_oidc }}
         run: |
           echo "ARM_USE_OIDC=${{ inputs.use_oidc }}" >> $GITHUB_ENV
+
+      # Set ARM env vars for Service Principal (Client Secret)
+      - name: Set ARM env vars for Service Principal
+        if: ${{ !inputs.use_oidc }}
+        run: |
+          echo "ARM_CLIENT_ID=${{ vars.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ vars.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ vars.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
 
       - name: Write Terraform Variable File with Secrets
