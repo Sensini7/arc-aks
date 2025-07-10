@@ -68,7 +68,7 @@ jobs:
           echo "ARM_USE_OIDC=${{ inputs.use_oidc }}" >> $GITHUB_ENV
 
       # Set ARM env vars for Service Principal (Client Secret)
-      - name: Set ARM env vars for Service Principal
+      - name: Set ARM env vars for Service Principal (Client Secret)
         if: ${{ !inputs.use_oidc }}
         run: |
           echo "ARM_CLIENT_ID=${{ vars.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
