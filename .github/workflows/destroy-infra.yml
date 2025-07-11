@@ -1,3 +1,78 @@
+# name: Terraform Plan and Destroy
+
+# on:
+#   workflow_dispatch:
+
+# permissions:
+#   id-token: write
+#   contents: read
+
+# env:
+#   TF_VERSION: 1.7.5
+
+# jobs:
+#   terraform-plan-destroy:
+#     runs-on: ubuntu-latest
+#     env:
+#       ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+#       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+#       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+#       ARM_USE_OIDC: true
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: ${{ env.TF_VERSION }}
+
+#       - name: 'Login to Azure with OIDC'
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ vars.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ vars.AZURE_TENANT_ID }}
+#           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+#       - name: Write Terraform Variable File with Secrets
+#         run: |
+#           cat > github_app.auto.tfvars <<EOF
+#           github_app_id            = "${{ secrets.GH_APP_ID }}"
+#           github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
+#           github_app_private_key     = <<EOKEY
+#           ${{ secrets.GH_APP_PRIVATE_KEY }}
+#           EOKEY
+
+#           EOF
+
+#     #   - name: Terraform Format
+#     #     run: terraform fmt -recursive
+
+#       - name: Terraform Init
+#         run: terraform init
+
+#     #   - name: Terraform Validate
+#     #     run: terraform validate
+
+#       - name: Terraform Plan (Destroy)
+#         run: terraform plan -destroy -out=tfplan -var-file="github_app.auto.tfvars"
+
+#       - name: Show Plan Output (for review)
+#         run: terraform show tfplan
+
+#       - name: Destroy Infrastructure
+#         run: terraform apply -auto-approve tfplan
+
+#     #   - name: Terraform Plan
+#     #     run: terraform plan -out=tfplan
+
+#     #   - name: Show Plan Output (for review)
+#     #     run: terraform show tfplan
+
+#     #   - name: Destroy Infrastructure
+#     #     # Use the same var file for destroy, no plan needed, auto-approve for CI
+#     #     run: terraform destroy -auto-approve -var-file="github_app.auto.tfvars"
+
 name: Terraform Plan and Destroy
 
 on:
@@ -13,6 +88,7 @@ env:
 jobs:
   terraform-plan-destroy:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     env:
       ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
@@ -27,48 +103,76 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: 'Login to Azure with OIDC'
+      - name: Login to Azure with OIDC
         uses: azure/login@v2
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id:      ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id:      ${{ vars.AZURE_TENANT_ID }}
+          subscription-id:${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install kubectl & Helm
+        uses: azure/setup-kubectl@v3
+
+      - name: Terraform Init & Refresh
+        run: |
+          terraform init
+          terraform refresh
+
+      - name: Capture RG and AKS names
+        id: tf
+        run: |
+          echo "resource_group=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "aks_name=$(terraform output -raw aks_cluster_name)"  >> $GITHUB_OUTPUT
+
+      - name: Configure AKS Credentials
+        uses: azure/aks-set-context@v1
+        with:
+          resource-group:     ${{ steps.tf.outputs.resource_group }}
+          cluster-name:       ${{ steps.tf.outputs.aks_name }}
+          overwrite-existing: true
+
+      - name: Uninstall ARC Helm Release (if present)
+        run: |
+          helm uninstall actions-runner-controller -n arc || true
+
+      - name: Remove ARC CRD Finalizers
+        run: |
+          for kind in \
+            autoscalinglisteners.actions.github.com \
+            autoscalingrunnersets.actions.github.com \
+            ephemeralrunnersets.actions.github.com; do
+            kubectl get $kind -n arc -o name \
+              | xargs -r -n1 kubectl patch {} -n arc \
+                  --type merge -p '{"metadata":{"finalizers":[]}}' || true
+          done
+
+      - name: Remove RBAC Finalizers
+        run: |
+          kubectl get rolebindings,roles,serviceaccounts -n arc -o name \
+            | xargs -r -n1 kubectl patch {} -n arc \
+                --type merge -p '{"metadata":{"finalizers":[]}}' || true
+
+      - name: Clear Namespace Finalizer
+        run: |
+          kubectl patch namespace arc \
+            --type=merge \
+            -p '{"spec":{"finalizers":[]}}' || true
 
       - name: Write Terraform Variable File with Secrets
         run: |
           cat > github_app.auto.tfvars <<EOF
-          github_app_id            = "${{ secrets.GH_APP_ID }}"
+          github_app_id             = "${{ secrets.GH_APP_ID }}"
           github_app_installation_id = "${{ secrets.GH_APP_INSTALLATION_ID }}"
           github_app_private_key     = <<EOKEY
           ${{ secrets.GH_APP_PRIVATE_KEY }}
           EOKEY
-
           EOF
-
-    #   - name: Terraform Format
-    #     run: terraform fmt -recursive
-
-      - name: Terraform Init
-        run: terraform init
-
-    #   - name: Terraform Validate
-    #     run: terraform validate
 
       - name: Terraform Plan (Destroy)
         run: terraform plan -destroy -out=tfplan -var-file="github_app.auto.tfvars"
 
-      - name: Show Plan Output (for review)
+      - name: Show Plan Output
         run: terraform show tfplan
 
       - name: Destroy Infrastructure
         run: terraform apply -auto-approve tfplan
-
-    #   - name: Terraform Plan
-    #     run: terraform plan -out=tfplan
-
-    #   - name: Show Plan Output (for review)
-    #     run: terraform show tfplan
-
-    #   - name: Destroy Infrastructure
-    #     # Use the same var file for destroy, no plan needed, auto-approve for CI
-    #     run: terraform destroy -auto-approve -var-file="github_app.auto.tfvars"
