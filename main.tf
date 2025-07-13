@@ -7,7 +7,7 @@ module "resource_group" {
   location = var.location
 }
 
-# Phase 1: Network Infrastructure
+# Phase 1: Network Infrastructure.
 module "networking" {
   source = "./modules/networking"
 
