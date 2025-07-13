@@ -1,4 +1,4 @@
-location   = "eastus"
+location   = "eastus2"
 rg_name    = "arc-demo-rg"
 aks_name   = "arcaksdemo"
 dns_prefix = "arcaksdemo"
