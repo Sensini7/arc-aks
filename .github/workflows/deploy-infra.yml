@@ -19,16 +19,10 @@ env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  #ARM_USE_OIDC: true
 
 jobs:
   terraform-plan-apply:
     runs-on: ubuntu-latest
-    # env:
-    #   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-    #   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-    #   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-    #   #ARM_USE_OIDC: true
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +40,6 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          #allow-no-subscriptions: true
 
       # Client Secret Azure Login
       - name: 'Login to Azure with Client Secret'
@@ -76,7 +69,6 @@ jobs:
           echo "ARM_TENANT_ID=${{ vars.AZURE_TENANT_ID }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ vars.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
-
       - name: Write Terraform Variable File with Secrets
         run: |
           cat > github_app.auto.tfvars <<EOF
@@ -85,18 +77,12 @@ jobs:
           github_app_private_key     = <<EOKEY
           ${{ secrets.GH_APP_PRIVATE_KEY }}
           EOKEY
-
           EOF
 
       - name: Terraform Format
         run: terraform fmt -recursive
 
       - name: Terraform Init
-        # env:
-        #   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-        #   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-        #   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-        #   ARM_USE_OIDC: true
         run: terraform init
 
       - name: Terraform Validate
@@ -108,39 +94,29 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-      - name: Export Terraform Outputs
-        id: tf_outputs
+      # Optional: Verify deployment status
+      - name: Get AKS Credentials for Verification
         run: |
-          echo "RG_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
-          echo "AKS_NAME=$(terraform output -raw aks_cluster_name)" >> $GITHUB_ENV
+          RG_NAME=$(terraform output -raw resource_group_name)
+          AKS_NAME=$(terraform output -raw aks_cluster_name)
+          az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --admin --overwrite-existing
 
-      - name: Get AKS Credentials
-        run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --admin --overwrite-existing
-
-      - name: Wait for ARC CRD
+      - name: Verify ARC Deployment
         run: |
-          # Wait up to 120 seconds for the CRD to appear
-          for i in {1..24}; do
-            kubectl get crd autoscalingrunnersets.actions.github.com && exit 0
-            echo "Waiting for ARC CRD to be available..."
-            sleep 5
-          done
-          echo "ARC CRD not available after waiting, failing."
-          exit 1
+          echo "Verifying ARC Controller deployment..."
+          kubectl get pods -n arc -l app.kubernetes.io/name=gha-runner-scale-set-controller
+          
+          echo "Verifying ARC Runner ScaleSet deployment..."
+          kubectl get autoscalingrunnersets -n arc
+          
+          echo "Checking runner scale set status..."
+          kubectl describe autoscalingrunnersets -n arc
 
-      # - name: Sleep after CRD for API sync
-      #   run: sleep 30
-
-      # - name: Apply Runner ScaleSet Manifest
-      #   run: kubectl apply -f manifests/arc-autoscale-runner.yml
-      - name: Install Helm
+      - name: Display Deployment Summary
         run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-      - name: Deploy ARC Runner ScaleSet with Helm
-        run: |
-          helm upgrade --install arc-runner-set \
-            --namespace arc \
-            --create-namespace \
-            -f manifests/runner-values.yml \
-            oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+          echo "=== Deployment Summary ==="
+          echo "Resource Group: $(terraform output -raw resource_group_name)"
+          echo "AKS Cluster: $(terraform output -raw aks_cluster_name)"
+          echo "ARC Namespace: $(terraform output -raw arc_namespace)"
+          echo "=== ARC Components Status ==="
+          kubectl get all -n arc

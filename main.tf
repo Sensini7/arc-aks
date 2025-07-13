@@ -47,3 +47,17 @@ module "github_secret" {
   github_app_installation_id = var.github_app_installation_id
   github_app_private_key     = var.github_app_private_key
 }
+
+# New ARC Runner Scale Set module
+module "arc_runner_scaleset" {
+  source                   = "./modules/arc_runner_scaleset"
+  namespace                = module.arc_namespace.namespace_name
+  namespace_depends_on     = [module.arc_controller, module.github_secret]
+  github_config_url        = var.github_config_url
+  github_config_secret_name = module.github_secret.secret_name
+  release_name             = var.arc_runner_release_name
+  runner_group             = var.runner_group
+  min_runners              = var.min_runners
+  max_runners              = var.max_runners
+  runner_image             = var.runner_image
+}

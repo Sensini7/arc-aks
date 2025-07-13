@@ -45,3 +45,40 @@ variable "github_app_private_key" {
   description = "GitHub App Private Key (PEM, base64 encoded if possible)"
   type        = string
 }
+
+# New variables for ARC Runner Scale Set
+variable "github_config_url" {
+  description = "GitHub repository or organization URL"
+  type        = string
+  default     = "https://github.com/Sensini7/arc-aks"
+}
+
+variable "runner_group" {
+  description = "GitHub runner group"
+  type        = string
+  default     = "Default"
+}
+
+variable "min_runners" {
+  description = "Minimum number of runners"
+  type        = number
+  default     = 0
+}
+
+variable "max_runners" {
+  description = "Maximum number of runners"
+  type        = number
+  default     = 10
+}
+
+variable "runner_image" {
+  description = "Container image for the runners"
+  type        = string
+  default     = "ghcr.io/actions/actions-runner:latest"
+}
+
+variable "arc_runner_release_name" {
+  description = "Helm release name for the runner scale set"
+  type        = string
+  default     = "arc-runner-set"
+}

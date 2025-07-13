@@ -3,8 +3,8 @@ name: Terraform Plan and Destroy
 on:
   workflow_dispatch:
     inputs:
-      force_cleanup:
-        description: 'Force cleanup of ARC resources before destroy?'
+      use_oidc:
+        description: 'Use OIDC for azure login?'
         required: true
         type: boolean
         default: true
@@ -23,7 +23,6 @@ jobs:
       ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      ARM_USE_OIDC: true
 
     steps:
       - uses: actions/checkout@v4
@@ -33,12 +32,42 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # OIDC Azure Login
       - name: 'Login to Azure with OIDC'
+        if: ${{ inputs.use_oidc }}
         uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Client Secret Azure Login
+      - name: 'Login to Azure with Client Secret'
+        if: ${{ !inputs.use_oidc }}
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ vars.AZURE_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "subscriptionId": "${{ vars.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId": "${{ vars.AZURE_TENANT_ID }}"
+            }
+
+      # Set ARM_USE_OIDC env for OIDC
+      - name: Set ARM_USE_OIDC env
+        if: ${{ inputs.use_oidc }}
+        run: |
+          echo "ARM_USE_OIDC=${{ inputs.use_oidc }}" >> $GITHUB_ENV
+
+      # Set ARM env vars for Service Principal (Client Secret)
+      - name: Set ARM env vars for Service Principal (Client Secret)
+        if: ${{ !inputs.use_oidc }}
+        run: |
+          echo "ARM_CLIENT_ID=${{ vars.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ vars.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ vars.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
       - name: Write Terraform Variable File with Secrets
         run: |
@@ -53,46 +82,6 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # Get AKS credentials for cleanup
-      - name: Get Terraform Outputs for AKS Access
-        id: tf_outputs
-        run: |
-          echo "RG_NAME=$(terraform output -raw resource_group_name)" >> $GITHUB_ENV
-          echo "AKS_NAME=$(terraform output -raw aks_cluster_name)" >> $GITHUB_ENV
-        continue-on-error: true
-
-      - name: Get AKS Credentials
-        if: ${{ inputs.force_cleanup && env.RG_NAME != '' && env.AKS_NAME != '' }}
-        run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --admin --overwrite-existing
-        continue-on-error: true
-
-      # Install Helm for cleanup
-      - name: Install Helm
-        if: ${{ inputs.force_cleanup }}
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-        continue-on-error: true
-
-      # Clean up ARC runner scale set that wasn't managed by Terraform
-      - name: Cleanup ARC Runner ScaleSet
-        if: ${{ inputs.force_cleanup }}
-        run: |
-          # Remove the runner scale set helm release
-          helm uninstall arc-runner-set --namespace arc || true
-          
-          # Wait a bit for resources to be cleaned up
-          sleep 10
-          
-          # Force delete any remaining runner scale sets
-          kubectl delete autoscalingrunnersets --all -n arc --timeout=60s || true
-          
-          # Force delete any remaining pods
-          kubectl delete pods --all -n arc --force --grace-period=0 || true
-          
-          # Remove finalizers from the namespace if it's stuck
-          kubectl patch namespace arc -p '{"metadata":{"finalizers":[]}}' --type=merge || true
-        continue-on-error: true
-
       - name: Terraform Plan (Destroy)
         run: terraform plan -destroy -out=tfplan -var-file="github_app.auto.tfvars"
 
@@ -101,3 +90,16 @@ jobs:
 
       - name: Destroy Infrastructure
         run: terraform apply -auto-approve tfplan
+
+      # Optional: Verify cleanup
+      - name: Verify Resource Group Cleanup
+        run: |
+          RG_NAME=$(terraform output -raw resource_group_name 2>/dev/null || echo "arc-demo-rg")
+          echo "Checking if resource group $RG_NAME still exists..."
+          if az group show --name $RG_NAME --output none 2>/dev/null; then
+            echo "⚠️  Resource group still exists, manual cleanup may be required"
+            az resource list --resource-group $RG_NAME --output table || true
+          else
+            echo "✅ Resource group successfully deleted"
+          fi
+        continue-on-error: true
