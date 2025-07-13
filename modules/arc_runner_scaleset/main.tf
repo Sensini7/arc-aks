@@ -11,7 +11,7 @@ resource "helm_release" "arc_runner_scale_set" {
     runnerGroup        = var.runner_group
     minRunners         = var.min_runners
     maxRunners         = var.max_runners
-    
+
     template = {
       spec = {
         containers = [{

@@ -82,3 +82,45 @@ variable "arc_runner_release_name" {
   type        = string
   default     = "arc-runner-set"
 }
+
+# New Phase 1 variables
+variable "name_prefix" {
+  description = "Prefix for all resource names"
+  type        = string
+  default     = "arc"
+}
+
+variable "vnet_address_space" {
+  description = "Virtual network address space"
+  type        = list(string)
+  default     = ["10.0.0.0/22"]
+}
+
+variable "aks_subnet_cidr" {
+  description = "AKS subnet CIDR"
+  type        = string
+  default     = "10.0.1.0/24"
+}
+
+variable "pe_subnet_cidr" {
+  description = "Private endpoints subnet CIDR"
+  type        = string
+  default     = "10.0.2.0/24"
+}
+
+variable "key_vault_name" {
+  description = "Key Vault name"
+  type        = string
+}
+
+variable "private_cluster_enabled" {
+  description = "Enable private AKS cluster"
+  type        = bool
+  default     = true
+}
+
+variable "enable_host_encryption" {
+  description = "Enable host-based encryption"
+  type        = bool
+  default     = true
+}
