@@ -124,3 +124,33 @@ variable "enable_host_encryption" {
   type        = bool
   default     = true
 }
+
+variable "allowed_ip_ranges" {
+  description = "List of allowed IP CIDR ranges for secure access"
+  type        = list(string)
+  default     = []
+}
+
+variable "key_vault_network_default_action" {
+  description = "Default action for Key Vault network ACLs (Allow/Deny)"
+  type        = string
+  default     = "Allow"
+}
+
+variable "authorized_ip_ranges" {
+  description = "Authorized IP ranges for AKS API server access"
+  type        = list(string)
+  default     = []
+}
+
+variable "service_cidr" {
+  description = "Service CIDR for AKS cluster"
+  type        = string
+  default     = "172.16.0.0/16"
+}
+
+variable "dns_service_ip" {
+  description = "DNS service IP for AKS cluster"
+  type        = string
+  default     = "172.16.0.10"
+}

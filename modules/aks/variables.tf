@@ -61,3 +61,45 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "authorized_ip_ranges" {
+  description = "Authorized IP ranges for API server access"
+  type        = list(string)
+  default     = []
+}
+
+variable "service_cidr" {
+  description = "Service CIDR for the cluster"
+  type        = string
+  default     = "172.16.0.0/16"
+}
+
+variable "dns_service_ip" {
+  description = "DNS service IP"
+  type        = string
+  default     = "172.16.0.10"
+}
+
+variable "network_plugin" {
+  description = "Network plugin for AKS"
+  type        = string
+  default     = "azure"
+}
+
+variable "network_policy" {
+  description = "Network policy for AKS"
+  type        = string
+  default     = "azure"
+}
+
+variable "default_node_pool_name" {
+  description = "Name of the default node pool"
+  type        = string
+  default     = "default"
+}
+
+variable "max_surge" {
+  description = "Maximum surge for node pool upgrades"
+  type        = string
+  default     = "10%"
+}

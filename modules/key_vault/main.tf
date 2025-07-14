@@ -1,11 +1,4 @@
-#Key Vault
-# Current client configuration to get tenant and object ID
 data "azurerm_client_config" "current" {}
-
-# Get current public IP for Terraform access
-data "http" "terraform_public_ip" {
-  url = "https://ipv4.icanhazip.com"
-}
 
 resource "azurerm_key_vault" "main" {
   name                        = var.key_vault_name
@@ -13,20 +6,20 @@ resource "azurerm_key_vault" "main" {
   resource_group_name         = var.resource_group_name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   sku_name                    = "premium"
-  purge_protection_enabled    = true
-  soft_delete_retention_days  = 7
+  purge_protection_enabled    = var.purge_protection_enabled
+  soft_delete_retention_days  = var.soft_delete_retention_days
   enabled_for_disk_encryption = true
   enabled_for_deployment      = true
 
   network_acls {
-    default_action = "Deny"
+    default_action = var.key_vault_network_default_action
     bypass         = "AzureServices"
+    ip_rules       = var.allowed_ip_ranges
   }
 
   tags = var.tags
 }
 
-# Use access policy instead of role assignment
 resource "azurerm_key_vault_access_policy" "current_user" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
@@ -70,10 +63,10 @@ resource "azurerm_key_vault_access_policy" "current_user" {
 
 resource "azurerm_key_vault_key" "disk_encryption" {
   depends_on   = [azurerm_key_vault_access_policy.current_user]
-  name         = "aks-disk-encryption-key"
+  name         = var.disk_encryption_key_name
   key_vault_id = azurerm_key_vault.main.id
-  key_type     = "RSA"
-  key_size     = 2048
+  key_type     = var.key_type
+  key_size     = var.key_size
 
   key_opts = [
     "decrypt",
@@ -83,6 +76,8 @@ resource "azurerm_key_vault_key" "disk_encryption" {
     "verify",
     "wrapKey",
   ]
+
+  tags = var.tags
 }
 
 resource "azurerm_disk_encryption_set" "main" {

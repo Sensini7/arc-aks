@@ -12,6 +12,8 @@ resource "azurerm_kubernetes_cluster" "main" {
   workload_identity_enabled = var.workload_identity_enabled
   oidc_issuer_enabled       = var.oidc_issuer_enabled
 
+  disk_encryption_set_id = var.disk_encryption_set_id
+
   tags = var.tags
 
   default_node_pool {
@@ -21,7 +23,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     vnet_subnet_id = var.vnet_subnet_id
 
     upgrade_settings {
-      max_surge = "10%"
+      max_surge = var.max_surge
     }
   }
 
@@ -34,10 +36,17 @@ resource "azurerm_kubernetes_cluster" "main" {
   role_based_access_control_enabled = true
 
   network_profile {
-    network_plugin = "azure"
-    network_policy = "azure"
-    # Fix: Use non-overlapping service CIDR
-    service_cidr       = "172.16.0.0/16"
-    dns_service_ip     = "172.16.0.10"
+    network_plugin = var.network_plugin
+    network_policy = var.network_policy
+    service_cidr   = var.service_cidr
+    dns_service_ip = var.dns_service_ip
+  }
+
+  # Only add API server access profile if IP ranges are provided
+  dynamic "api_server_access_profile" {
+    for_each = length(var.authorized_ip_ranges) > 0 ? [1] : []
+    content {
+      authorized_ip_ranges = var.authorized_ip_ranges
+    }
   }
 }
