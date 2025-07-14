@@ -41,22 +41,22 @@ module "key_vault" {
 }
 
 # Phase 1: Key Vault Private Endpoint
-module "key_vault_private_endpoint" {
-  source = "./modules/private_endpoint"
+# module "key_vault_private_endpoint" {
+#   source = "./modules/private_endpoint"
 
-  name                = "${var.name_prefix}-kv-pe"
-  location            = var.location
-  resource_group_name = module.resource_group.name
-  subnet_id           = module.networking.private_endpoints_subnet_id
-  target_resource_id  = module.key_vault.key_vault_id
-  subresource_names   = ["vault"]
+#   name                = "${var.name_prefix}-kv-pe"
+#   location            = var.location
+#   resource_group_name = module.resource_group.name
+#   subnet_id           = module.networking.private_endpoints_subnet_id
+#   target_resource_id  = module.key_vault.key_vault_id
+#   subresource_names   = ["vault"]
 
-  tags = {
-    Environment = "Production"
-    Project     = "ARC-AKS"
-    Phase       = "1"
-  }
-}
+#   tags = {
+#     Environment = "Production"
+#     Project     = "ARC-AKS"
+#     Phase       = "1"
+#   }
+# }
 
 # Phase 1: Workload Identity
 module "workload_identity" {
