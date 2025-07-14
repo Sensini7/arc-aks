@@ -2,6 +2,11 @@
 # Current client configuration to get tenant and object ID
 data "azurerm_client_config" "current" {}
 
+# Get current public IP for Terraform access
+data "http" "terraform_public_ip" {
+  url = "https://ipv4.icanhazip.com"
+}
+
 resource "azurerm_key_vault" "main" {
   name                        = var.key_vault_name
   location                    = var.location
