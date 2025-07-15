@@ -2,8 +2,8 @@ ARC-AKS-TF
 
 # GitHub Actions ARC on AKS - Infrastructure as Code
 
-This repo deploys a scalable, auto-scaling GitHub Actions runner environment on AKS using ARC and Terraform.  
-**Modules** for each major Azure/K8s resource, with backend state in Azure Storage.  
+This repo deploys a scalable, auto-scaling GitHub Actions runner environment on AKS using ARC and Terraform.
+**Modules** for each major Azure/K8s resource, with backend state in Azure Storage.
 Runner ScaleSet is deployed via Kubernetes manifest.
 
 ## Steps
