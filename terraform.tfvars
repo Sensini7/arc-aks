@@ -40,8 +40,8 @@ pe_subnet_cidr     = "10.0.2.0/24"
 # AKS configuration
 aks_name                = "arcaksdemo"
 dns_prefix              = "arcaksdemo"
-private_cluster_enabled = false           # Start with false for initial setup
-enable_host_encryption  = false           # Start with false for initial setup
+private_cluster_enabled = true            # Start with false for initial setup
+enable_host_encryption  = true            # Start with false for initial setup
 service_cidr            = "172.16.0.0/16" # Non-overlapping with VNet
 dns_service_ip          = "172.16.0.10"
 vm_size                 = "Standard_B2s"
