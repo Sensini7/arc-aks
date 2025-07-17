@@ -113,6 +113,7 @@ Run `terraform init` and `terraform apply` to provision the resources.
 | `aks_cluster_name` | AKS cluster name |
 <!-- END_TF_DOCS -->
 
+# SECOND VERSION
 
 # ARC-AKS Terraform
 
@@ -171,7 +172,7 @@ module "arc_aks" {
 
   # Helm Configuration
   arc_runner_release_name = "arc-runner-set"
-}
+}```
 
 Run `terraform init` and `terraform apply` to provision the resources.
 
