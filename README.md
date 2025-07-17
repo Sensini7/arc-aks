@@ -172,7 +172,8 @@ module "arc_aks" {
 
   # Helm Configuration
   arc_runner_release_name = "arc-runner-set"
-}```
+}
+```
 
 Run `terraform init` and `terraform apply` to provision the resources.
 
