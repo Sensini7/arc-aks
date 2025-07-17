@@ -1,0 +1,14 @@
+# Terraform state
+*.tfstate
+*.tfstate.backup
+
+#Terraform logs
+crash.logs
+*.tfplan
+
+#Local Terraform CLI files
+.terraform/
+.terraform.lock.hcl
+
+#Test output
+test-output/
