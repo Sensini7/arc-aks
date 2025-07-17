@@ -50,7 +50,7 @@ Run `terraform init` and `terraform apply` to provision the resources.
 
 ## Module Documentation
 <!-- BEGIN_TF_DOCS -->
-<!-- ### Requirements
+ ### Requirements
 | Name | Version |
 |------|---------|
 | terraform | >= 1.5.0 |
@@ -111,7 +111,7 @@ Run `terraform init` and `terraform apply` to provision the resources.
 | `arc_namespace` | Name of the ARC namespace |
 | `resource_group_name` | Resource group name |
 | `aks_cluster_name` | AKS cluster name |
-END_TF_DOCS -->
+<!-- END_TF_DOCS -->
 
 
 # ARC-AKS Terraform
