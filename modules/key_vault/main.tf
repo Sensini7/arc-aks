@@ -1,16 +1,16 @@
 data "azurerm_client_config" "current" {}
 
+# Simplified Key Vault - no customer-managed keys
 resource "azurerm_key_vault" "main" {
-  name                        = var.key_vault_name
-  location                    = var.location
-  resource_group_name         = var.resource_group_name
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  sku_name                    = "premium"
-  purge_protection_enabled    = var.purge_protection_enabled
-  soft_delete_retention_days  = var.soft_delete_retention_days
-  enabled_for_disk_encryption = true
-  enabled_for_deployment      = true
+  name                       = var.key_vault_name
+  location                   = var.location
+  resource_group_name        = var.resource_group_name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = var.soft_delete_retention_days
+  purge_protection_enabled   = var.purge_protection_enabled
 
+  # Network access - configurable for gradual hardening
   network_acls {
     default_action = var.key_vault_network_default_action
     bypass         = "AzureServices"
@@ -20,87 +20,44 @@ resource "azurerm_key_vault" "main" {
   tags = var.tags
 }
 
-resource "azurerm_key_vault_access_policy" "current_user" {
+# Access policy for Terraform (current user)
+resource "azurerm_key_vault_access_policy" "terraform" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
   object_id    = data.azurerm_client_config.current.object_id
 
-  key_permissions = [
-    "Create",
-    "Delete",
-    "Get",
-    "List",
-    "Update",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Purge"
-  ]
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Purge"
-  ]
-
-  certificate_permissions = [
-    "Get",
-    "List",
-    "Create",
-    "Delete",
-    "Update",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Purge"
-  ]
+  secret_permissions = ["Get", "List", "Set", "Delete", "Recover", "Backup", "Restore"]
 }
 
-resource "azurerm_key_vault_key" "disk_encryption" {
-  depends_on   = [azurerm_key_vault_access_policy.current_user]
-  name         = var.disk_encryption_key_name
+# GitHub App detals as kv secrets.
+resource "azurerm_key_vault_secret" "github_app_id" {
+  name         = "github-app-id"
+  value        = var.github_app_id
   key_vault_id = azurerm_key_vault.main.id
-  key_type     = var.key_type
-  key_size     = var.key_size
 
-  key_opts = [
-    "decrypt",
-    "encrypt",
-    "sign",
-    "unwrapKey",
-    "verify",
-    "wrapKey",
-  ]
-
-  tags = var.tags
+  depends_on = [azurerm_key_vault_access_policy.terraform]
 }
 
-resource "azurerm_disk_encryption_set" "main" {
-  name                = "${var.key_vault_name}-des"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  key_vault_key_id    = azurerm_key_vault_key.disk_encryption.id
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  tags = var.tags
-}
-
-resource "azurerm_key_vault_access_policy" "disk_encryption_set" {
+resource "azurerm_key_vault_secret" "github_app_installation_id" {
+  name         = "github-app-installation-id"
+  value        = var.github_app_installation_id
   key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = azurerm_disk_encryption_set.main.identity.0.tenant_id
-  object_id    = azurerm_disk_encryption_set.main.identity.0.principal_id
 
-  key_permissions = [
-    "Get",
-    "WrapKey",
-    "UnwrapKey",
-  ]
+  depends_on = [azurerm_key_vault_access_policy.terraform]
+}
+
+resource "azurerm_key_vault_secret" "github_app_private_key" {
+  name         = "github-app-private-key"
+  value        = var.github_app_private_key
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [azurerm_key_vault_access_policy.terraform]
+}
+
+# Grant AKS access to read secrets
+resource "azurerm_role_assignment" "aks_kv_secrets_user" {
+  count                = var.aks_principal_id != "" ? 1 : 0
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = var.aks_principal_id
 }

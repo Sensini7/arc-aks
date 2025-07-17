@@ -27,36 +27,18 @@ module "networking" {
 
 # Phase 1: Key Vault Infrastructure
 module "key_vault" {
-  source = "./modules/key_vault"
-
-  key_vault_name      = var.key_vault_name
-  location            = var.location
-  resource_group_name = module.resource_group.name
-
-  tags = {
-    Environment = "Production"
-    Project     = "ARC-AKS"
-    Phase       = "1"
-  }
+  source                           = "./modules/key_vault"
+  key_vault_name                   = var.key_vault_name
+  location                         = var.location
+  resource_group_name              = module.resource_group.name
+  allowed_ip_ranges                = var.allowed_ip_ranges
+  key_vault_network_default_action = var.key_vault_network_default_action
+  github_app_id                    = var.github_app_id
+  github_app_installation_id       = var.github_app_installation_id
+  github_app_private_key           = var.github_app_private_key
+  aks_principal_id                 = module.aks.cluster_identity_principal_id
+  tags                             = var.tags
 }
-
-# Phase 1: Key Vault Private Endpoint
-# module "key_vault_private_endpoint" {
-#   source = "./modules/private_endpoint"
-
-#   name                = "${var.name_prefix}-kv-pe"
-#   location            = var.location
-#   resource_group_name = module.resource_group.name
-#   subnet_id           = module.networking.private_endpoints_subnet_id
-#   target_resource_id  = module.key_vault.key_vault_id
-#   subresource_names   = ["vault"]
-
-#   tags = {
-#     Environment = "Production"
-#     Project     = "ARC-AKS"
-#     Phase       = "1"
-#   }
-# }
 
 # Phase 1: Workload Identity
 module "workload_identity" {

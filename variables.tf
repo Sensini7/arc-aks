@@ -153,4 +153,15 @@ variable "dns_service_ip" {
   description = "DNS service IP for AKS cluster"
   type        = string
   default     = "172.16.0.10"
+
+}
+
+variable "tags" {
+  description = "Common tags to apply to all resources"
+  type        = map(string)
+  default = {
+    Environment = "demo"
+    Project     = "arc-demo"
+    ManagedBy   = "terraform"
+  }
 }

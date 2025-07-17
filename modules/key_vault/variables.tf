@@ -37,22 +37,27 @@ variable "soft_delete_retention_days" {
   default     = 7
 }
 
-variable "disk_encryption_key_name" {
-  description = "Name of the disk encryption key"
+# GitHub App Configuration
+variable "github_app_id" {
+  description = "GitHub App ID"
   type        = string
-  default     = "aks-disk-encryption-key"
 }
 
-variable "key_type" {
-  description = "Type of key to create"
+variable "github_app_installation_id" {
+  description = "GitHub App Installation ID"
   type        = string
-  default     = "RSA"
 }
 
-variable "key_size" {
-  description = "Size of the key"
-  type        = number
-  default     = 2048
+variable "github_app_private_key" {
+  description = "GitHub App Private Key"
+  type        = string
+  sensitive   = true
+}
+
+variable "aks_principal_id" {
+  description = "AKS cluster managed identity principal ID"
+  type        = string
+  default     = ""
 }
 
 variable "tags" {
