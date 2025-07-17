@@ -36,7 +36,7 @@ module "key_vault" {
   github_app_id                    = var.github_app_id
   github_app_installation_id       = var.github_app_installation_id
   github_app_private_key           = var.github_app_private_key
-  aks_principal_id                 = module.aks.cluster_identity_principal_id
+  aks_principal_id                 = module.aks.identity[0].principal_id
   tags                             = var.tags
 }
 
@@ -67,7 +67,6 @@ module "aks" {
   vm_size                   = var.vm_size
   vnet_subnet_id            = module.networking.aks_subnet_id
   private_cluster_enabled   = var.private_cluster_enabled
-  disk_encryption_set_id    = module.key_vault.disk_encryption_set_id
   enable_host_encryption    = var.enable_host_encryption
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
