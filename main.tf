@@ -38,6 +38,8 @@ module "key_vault" {
   github_app_private_key           = var.github_app_private_key
   aks_principal_id                 = module.aks.identity[0].principal_id
   tags                             = var.tags
+
+  depends_on = [module.aks]
 }
 
 # Phase 1: Workload Identity
@@ -99,6 +101,8 @@ provider "helm" {
 # Existing ARC modules (will be enhanced in later phases)
 module "arc_namespace" {
   source = "./modules/arc_namespace"
+
+  depends_on = [module.aks]
 }
 
 module "arc_controller" {
@@ -113,6 +117,8 @@ module "github_secret" {
   github_app_id              = var.github_app_id
   github_app_installation_id = var.github_app_installation_id
   github_app_private_key     = var.github_app_private_key
+
+  depends_on = [module.arc_namespace]
 }
 
 module "arc_runner_scaleset" {

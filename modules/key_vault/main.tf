@@ -56,8 +56,12 @@ resource "azurerm_key_vault_secret" "github_app_private_key" {
 
 # Grant AKS access to read secrets
 resource "azurerm_role_assignment" "aks_kv_secrets_user" {
-  count                = var.aks_principal_id != "" ? 1 : 0
+  count                = var.aks_principal_id != null ? 1 : 0
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = var.aks_principal_id
+
+  depends_on = [
+    azurerm_key_vault.main
+  ]
 }

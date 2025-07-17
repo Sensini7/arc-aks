@@ -57,7 +57,7 @@ variable "github_app_private_key" {
 variable "aks_principal_id" {
   description = "AKS cluster managed identity principal ID"
   type        = string
-  default     = ""
+  default     = null # Change from "" to null
 }
 
 variable "tags" {
