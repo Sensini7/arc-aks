@@ -1,4 +1,4 @@
-<!-- # ARC-AKS Terraform
+# ARC-AKS Terraform
 
 
 This repository contains Terraform code for deploying a GitHub Actions runner environment on Azure Kubernetes Service (AKS) with Azure Arc. The configuration provisions an AKS cluster, installs the Arc runner controller, creates the required Kubernetes namespace and secrets, and deploys a runner scale set via Helm.
@@ -111,7 +111,7 @@ Run `terraform init` and `terraform apply` to provision the resources.
 | `arc_namespace` | Name of the ARC namespace |
 | `resource_group_name` | Resource group name |
 | `aks_cluster_name` | AKS cluster name |
-END_TF_DOCS --> -->
+END_TF_DOCS -->
 
 
 # ARC-AKS Terraform
@@ -185,9 +185,9 @@ Run `terraform init` and `terraform apply` to provision the resources.
   - Read (if app is installed at organization level)
 
 ### Azure Service Principal Permissions
-- **Contributor** on the target resource group
-- **Azure Kubernetes Service Cluster Admin Role** for AKS management
-- **Permissions to create Kubernetes resources** via Azure Arc
+- **Contributor** on the target resource group or Subscription if deploying without existing RG
+- **Storage account contributor And Blob Data Contributor** for Backend management
+
 
 ## Module Documentation
 <!-- BEGIN_TF_DOCS -->
